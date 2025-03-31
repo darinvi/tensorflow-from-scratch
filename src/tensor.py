@@ -67,7 +67,17 @@ class Tensor:
             other.backward(np.dot(self.value.T, grad))
         
         return self._return_tensor(other, out, grad_fn)
-    
+
+    @_validate_input
+    def maximum(self, other):
+        out = Tensor(np.maximum(self.value, other.value))
+
+        def grad_fn(grad):
+            self.backward(np.where(self.value >= other.value, grad, 0))
+            other.backward(np.where(other.value > self.value, grad, 0))
+
+        return self._return_tensor(other, out, grad_fn) 
+
     def __repr__(self):
         return f"Tensor(value={self.value}, grad={self.grad})"
 
