@@ -15,9 +15,6 @@ class Activation(ABC):
 class LinearActivation(Activation):
     def call(self, X):
         return X
-    
-    def backward(self, X):
-        return np.ones_like(X)
 
 class ReLU(Activation):
     def call(self, X):

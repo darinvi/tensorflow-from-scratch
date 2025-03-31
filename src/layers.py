@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from activations import *
 from initializers import VarianceScaling
+from tensor import Tensor
 
 class Layer(ABC):
     def __init__(self, input_shape=None):
@@ -9,11 +10,11 @@ class Layer(ABC):
 
     @abstractmethod
     def forward(self, X):
-        pass
+        ...
 
     @abstractmethod
-    def build(self, input_shape):
-        pass
+    def output_shape(self):
+        ...
 
     def _infer_input_shape(self, X):
         shape = X.shape
@@ -22,6 +23,10 @@ class Layer(ABC):
         
         return shape[1:]
 
+    @abstractmethod
+    def build(self, input_shape):
+        ...
+
     def __call__(self, X):
         if not self.built:
             input_shape = self._infer_input_shape(X)
@@ -29,15 +34,21 @@ class Layer(ABC):
         self._validate_input(X)
         return self.forward(X)
 
-    def _validate_input(self, X):
-        # TODO use my own tensor class
-        if not isinstance(X, np.ndarray):
-            raise Exception("Input must be a numpy array")
+    @staticmethod
+    def _validate_input(X):
+        if not isinstance(X, Tensor):
+            X = Tensor(X)
+        return X
+
+class TrainableLayer(Layer):
+    def __init__(self, input_shape=None):
+        super().__init__(input_shape)
+        self.trainable = True
 
     def _init_activation(self):
         if isinstance(self.activation, Activation):
             return
-        
+    
         if (act := ACTIVATIONS.get(self.activation)) is None:
             raise Exception(f"Invalid activation function: {self.activation}. Valid options are: {ACTIVATIONS.keys()}")
         
@@ -54,21 +65,21 @@ class Layer(ABC):
         
         self.weights = self.kernel_initializer.get_weights(input_shape, self.n_neurons)
 
-class Dense(Layer):
+class Dense(TrainableLayer):
     def __init__(self, n_neurons, activation=None, kernel_initializer='glorot_normal'):
         self.activation = activation
         self.n_neurons = n_neurons
         self.kernel_initializer = kernel_initializer
 
-    def get_size(self):
-        return self.n_neurons
+    def output_shape(self):
+        return (self.n_neurons,)
 
     def build(self, input_shape):
         self._init_activation()
         self._init_kernel(input_shape)
-        self.biases = np.zeros((1, self.n_neurons))
+        self.biases = Tensor(np.zeros((1, self.n_neurons)))
         self.built = True
 
     def forward(self, inputs):
-        output = inputs @ self.weights + self.biases
+        output = inputs.matmul(self.weights) + self.biases
         return self.activation.forward(output)
