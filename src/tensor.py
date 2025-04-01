@@ -22,6 +22,8 @@ class Tensor:
         if grad is None:
             grad = np.ones_like(self.value)
         
+        print(self.grad_fn)
+        print(grad.shape, self.grad.shape, self.value.shape)
         self.grad += grad
 
         if self.grad_fn:

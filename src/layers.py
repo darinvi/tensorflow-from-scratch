@@ -96,8 +96,15 @@ class Dense(TrainableLayer):
 
         shape = input_shape or self.input_shape
         self.input_shape = shape
+        
+        # Handle input shape properly
+        if isinstance(shape, tuple):
+            input_size = shape[-1]  # Take the last dimension as input size
+        else:
+            input_size = shape
+            
         self._init_activation()
-        self._init_kernel(shape)
+        self._init_kernel(input_size)
         self.biases = Tensor.zeros((1, self.n_neurons))
         self.built = True
 
