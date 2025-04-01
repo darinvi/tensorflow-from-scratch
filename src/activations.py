@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import numpy as np
+from .tensor import Tensor
 
 class Activation(ABC):
     def __call__(self, X):
@@ -8,21 +8,14 @@ class Activation(ABC):
     def forward(self, X):
         return self.call(X)
 
-    @abstractmethod
-    def call(self, X):
-        pass
-
 class LinearActivation(Activation):
     def call(self, X):
         return X
 
 class ReLU(Activation):
     def call(self, X):
-        return np.maximum(X, 0)
-
-    def backward(self, X):
-        return np.where(X > 0, 1, 0)
-
+        return Tensor(X).maximum(0)
+    
 ACTIVATIONS = {
     'linear': LinearActivation,
     'relu': ReLU,

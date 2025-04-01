@@ -1,6 +1,7 @@
+import numpy as np
 from abc import ABC, abstractmethod
 
-class Loss(ABC):
+class Metric(ABC):
     def __call__(self, y_pred, y_true):
         return self.forward(y_pred, y_true)
 
@@ -8,10 +9,10 @@ class Loss(ABC):
     def forward(self, y_pred, y_true):
         pass
 
-class MSE(Loss):
+class Accuracy(Metric):
     def forward(self, y_pred, y_true):
-        return (y_pred - y_true) ** 2
+        return np.mean(y_pred == y_true)
 
-LOSS_FUNCTIONS = {
-    'mse': MSE,
+METRICS = {
+    'accuracy': Accuracy
 }

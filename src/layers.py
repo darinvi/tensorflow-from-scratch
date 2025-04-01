@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from activations import *
-from initializers import VarianceScaling
-from tensor import Tensor
+from .activations import *
+from .initializers import VarianceScaling
+from .tensor import Tensor
 
 class Layer(ABC):
     def __init__(self, input_shape=None):
@@ -24,7 +24,7 @@ class Layer(ABC):
         return shape[1:]
 
     @abstractmethod
-    def build(self, input_shape):
+    def build(self, input_shape=None):
         ...
 
     def __call__(self, X):
@@ -65,8 +65,21 @@ class TrainableLayer(Layer):
         
         self.weights = self.kernel_initializer.get_weights(input_shape, self.n_neurons)
 
+class InputLayer(Layer):
+    def __init__(self, input_shape=None):
+        if input_shape is not None:
+            raise Exception("InputLayer requires input_shape at initialization time")
+        super().__init__()
+
+    def output_shape(self):
+        return self.input_shape
+    
+    def build(self, input_shape=None):
+        self.built = True
+
 class Dense(TrainableLayer):
-    def __init__(self, n_neurons, activation=None, kernel_initializer='glorot_normal'):
+    def __init__(self, n_neurons, activation='linear', kernel_initializer='glorot_normal', input_shape=None):
+        super().__init__(input_shape)
         self.activation = activation
         self.n_neurons = n_neurons
         self.kernel_initializer = kernel_initializer
@@ -74,10 +87,18 @@ class Dense(TrainableLayer):
     def output_shape(self):
         return (self.n_neurons,)
 
-    def build(self, input_shape):
+    def build(self, input_shape=None):
+        if input_shape is None and self.input_shape is None:
+            raise Exception("Input shape must be provided either at build time or at initialization time")
+
+        if input_shape and self.input_shape and input_shape != self.input_shape:
+            raise Exception("Input shape must be provided either at build time or at initialization time")
+
+        shape = input_shape or self.input_shape
+        self.input_shape = shape
         self._init_activation()
-        self._init_kernel(input_shape)
-        self.biases = Tensor(np.zeros((1, self.n_neurons)))
+        self._init_kernel(shape)
+        self.biases = Tensor.zeros((1, self.n_neurons))
         self.built = True
 
     def forward(self, inputs):

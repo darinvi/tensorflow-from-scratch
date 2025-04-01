@@ -19,3 +19,7 @@ class SGD(Optimizer):
     def _step(self, layer):
         layer.weights.value -= self.lr * layer.weights.grad
         layer.biases.value -= self.lr * layer.biases.grad
+
+OPTIMIZERS = {
+    'sgd': SGD,
+}

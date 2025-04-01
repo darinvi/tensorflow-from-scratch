@@ -78,6 +78,43 @@ class Tensor:
 
         return self._return_tensor(other, out, grad_fn) 
 
+    @_validate_input
+    def __sub__(self, other):
+        out = Tensor(self.value - other.value)
+
+        def grad_fn(grad):
+            self.backward(grad)
+            other.backward(-grad)
+
+        return self._return_tensor(other, out, grad_fn)
+    
+    def __pow__(self, exponent):
+        if not isinstance(exponent, (int, float)):
+            raise ValueError("Exponent must be a scalar (int or float).")
+
+        out = Tensor(self.value ** exponent)
+
+        def grad_fn(grad):
+            self.backward(grad * exponent * (self.value ** (exponent - 1)))
+
+        out.grad_fn = grad_fn
+        out.parents = [self]
+        return out
+
     def __repr__(self):
         return f"Tensor(value={self.value}, grad={self.grad})"
+
+    def shape(self):
+        return self.value.shape
+
+    @staticmethod
+    def zeros(shape):
+        return Tensor(np.zeros(shape))
+    
+    @staticmethod
+    def randn(*shape):
+        if not all(isinstance(s, int) for s in shape):
+            raise ValueError("All dimensions must be integers")
+        
+        return Tensor(np.random.randn(*shape))
 
